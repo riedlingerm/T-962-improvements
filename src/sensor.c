@@ -33,6 +33,15 @@ static uint8_t cjsensorpresent = 0;
 static float avgtemp;
 static float coldjunction;
 
+typedef enum eTempSelection{
+	TS_AIR = 0,
+	TS_BOARD = 1,
+	TS_INVALID = 255,
+} EnTempSelection_t;
+
+//The selected sensor pair to determine the feedback temperature
+static EnTempSelection_t tempSel = TS_INVALID;
+
 void Sensor_ValidateNV(void) {
 	int temp;
 
@@ -63,6 +72,24 @@ void Sensor_ValidateNV(void) {
 		NV_SetConfig(TC_RIGHT_OFFSET, temp); // Default +/-0 offset
 	}
 	adcoffsetadj[1] = ((float)(temp - 100)) * 0.25f;
+
+	temp = NV_GetConfig(TEMP_SENSOR_SEL);
+	if(temp == 255){
+		temp = 0;
+		NV_SetConfig(TEMP_SENSOR_SEL, temp); //Default is air sensor
+	}
+	switch (temp)
+	{
+	case 0:
+		tempSel = TS_AIR;
+		break;
+	case 1:
+		tempSel = TS_BOARD;
+		break;
+	default:
+		tempSel = TS_INVALID;
+		break;
+	}
 }
 
 
@@ -100,20 +127,19 @@ void Sensor_DoConversion(void) {
 
 	// Assume no CJ sensor
 	cjsensorpresent = 0;
-	if (tcpresent[0] && tcpresent[1]) {
-		avgtemp = (tctemp[0] + tctemp[1]) / 2.0f;
+	if (tcpresent[2] && tcpresent[3] && (tempSel == TS_BOARD)) {
+		avgtemp = (tctemp[2] + tctemp[3]) / 2.0f;
 		temperature[0] = tctemp[0];
 		temperature[1] = tctemp[1];
 		tempvalid |= 0x03;
 		coldjunction = (tccj[0] + tccj[1]) / 2.0f;
 		cjsensorpresent = 1;
-	} else if (tcpresent[2] && tcpresent[3]) {
-		avgtemp = (tctemp[2] + tctemp[3]) / 2.0f;
-		temperature[0] = tctemp[2];
-		temperature[1] = tctemp[3];
+	} else if (tcpresent[0] && tcpresent[1] && (tempSel == TS_AIR)) {
+		avgtemp = (tctemp[0] + tctemp[1]) / 2.0f;
+		temperature[0] = tctemp[0];
+		temperature[1] = tctemp[1];
 		tempvalid |= 0x03;
-		tempvalid &= ~0x0C;
-		coldjunction = (tccj[2] + tccj[3]) / 2.0f;
+		coldjunction = (tccj[0] + tccj[1]) / 2.0f;
 		cjsensorpresent = 1;
 	} else {
 		// If the external TC interface is not present we fall back to the

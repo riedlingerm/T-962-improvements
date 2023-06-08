@@ -30,6 +30,7 @@ static setupMenuStruct setupmenu[] = {
 	{"Left TC offset  %+1.2f", TC_LEFT_OFFSET, 0, 200, -100, 0.25f},
 	{"Right TC gain    %1.2f", TC_RIGHT_GAIN, 10, 190, 0, 0.01f},
 	{"Right TC offset %+1.2f", TC_RIGHT_OFFSET, 0, 200, -100, 0.25f},
+	{"Sensor selection %4.0f", TEMP_SENSOR_SEL, 0, 1, 0, 1.0f},
 };
 #define NUM_SETUP_ITEMS (sizeof(setupmenu) / sizeof(setupmenu[0]))
 
