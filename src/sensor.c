@@ -128,17 +128,36 @@ void Sensor_DoConversion(void) {
 	// Assume no CJ sensor
 	cjsensorpresent = 0;
 	if (tcpresent[2] && tcpresent[3] && (tempSel == TS_BOARD)) {
+		//Use external sensors to derive board temperature, no compensation
 		avgtemp = (tctemp[2] + tctemp[3]) / 2.0f;
+		//Read air sensors and do gain+offset compensation
 		temperature[0] = tctemp[0];
 		temperature[1] = tctemp[1];
+		// Gain adjust
+		temperature[0] *= adcgainadj[0];
+		temperature[1] *= adcgainadj[1];
+		// Offset adjust
+		temperature[0] += adcoffsetadj[0];
+		temperature[1] += adcoffsetadj[1];
+		//Set Valid
 		tempvalid |= 0x03;
-		coldjunction = (tccj[0] + tccj[1]) / 2.0f;
+		//Set cold junction
+		coldjunction = (tccj[2] + tccj[3]) / 2.0f;
 		cjsensorpresent = 1;
 	} else if (tcpresent[0] && tcpresent[1] && (tempSel == TS_AIR)) {
-		avgtemp = (tctemp[0] + tctemp[1]) / 2.0f;
+		//Use internal sensors to derive air temperature and apply offset and gain		
 		temperature[0] = tctemp[0];
 		temperature[1] = tctemp[1];
+		// Gain adjust
+		temperature[0] *= adcgainadj[0];
+		temperature[1] *= adcgainadj[1];
+		// Offset adjust
+		temperature[0] += adcoffsetadj[0];
+		temperature[1] += adcoffsetadj[1];
+		avgtemp = (temperature[0] + temperature[1]) / 2.0f;
+		//Set validity
 		tempvalid |= 0x03;
+		//Set cold junction
 		coldjunction = (tccj[0] + tccj[1]) / 2.0f;
 		cjsensorpresent = 1;
 	} else {
